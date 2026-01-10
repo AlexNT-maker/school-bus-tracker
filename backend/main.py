@@ -6,12 +6,12 @@ import paho.mqtt.client as mqtt
 from fastapi.middleware.cors import CORSMiddleware
 
 
-
-BROKER = "broker.hivemq.com"
+# Ρυθμίσεις MQTT ----------------------------------------------------------------------------------------------
+BROKER = "test.mosquitto.org"
 PORT = 1883
 TOPIC = "schoolbus/bimbo/data"
 
-# Σε αυτό το dictionary θα αποθηκευτεί το τελευταίο στίγμα που λάβαμε
+# Σε αυτό το dictionary θα αποθηκευτεί το τελευταίο στίγμα που λάβαμε------------------------------------------
 latest_data = {
     "latitude": 0,
     "longitude": 0,
@@ -20,14 +20,15 @@ latest_data = {
     "message": "Waiting for data..."
 }
 
-# Η συνάρτηση που τρέχει όταν λαμβάνουμε μήνυμα απο το MQTT
+# Η συνάρτηση που τρέχει όταν λαμβάνουμε μήνυμα απο το MQTT----------------------------------------------------
 def on_message(client, userdata, msg):
     global latest_data
     try:
-        # Αποκωδικοποίηση του μηνύματος από bytes σε string και μετά σε λεξικό (JSON)
+        # Αποκωδικοποίηση του μηνύματος από bytes σε string και μετά σε λεξικό
         payload = msg.payload.decode ("utf-8")
         data = json.loads(payload)
 
+#Αποθήκευση δεδομένων στη μνήμη 
         latest_data = data 
         print (f"New pinpoint {latest_data['speed']} km/h")
 
@@ -57,7 +58,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-
+# Επιτρέπουμε την επικοινωνία μεταξύ Front και Back end
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -66,6 +67,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Οι πόρτες του API ------------------------------------------------------------------------------------------
 @app.get("/")
 def read_root():
     return {"status": "Online", "service": "School Bus Tracker Backend"}
