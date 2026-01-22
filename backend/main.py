@@ -6,12 +6,12 @@ import paho.mqtt.client as mqtt
 from fastapi.middleware.cors import CORSMiddleware
 
 
-# Ρυθμίσεις MQTT ----------------------------------------------------------------------------------------------
+# MQTT Configuration ----------------------------------------------------------------------------------------------
 BROKER = "test.mosquitto.org"
 PORT = 1883
 TOPIC = "schoolbus/bimbo/data"
 
-# Σε αυτό το dictionary θα αποθηκευτεί το τελευταίο στίγμα που λάβαμε------------------------------------------
+# Dictionary to store the latest received data ------------------------------------------
 latest_data = {
     "latitude": 0,
     "longitude": 0,
@@ -20,15 +20,15 @@ latest_data = {
     "message": "Waiting for data..."
 }
 
-# Η συνάρτηση που τρέχει όταν λαμβάνουμε μήνυμα απο το MQTT----------------------------------------------------
+# Callback function triggered upon receiving an MQTT message----------------------------------------------------
 def on_message(client, userdata, msg):
     global latest_data
     try:
-        # Αποκωδικοποίηση του μηνύματος από bytes σε string και μετά σε λεξικό
+        # # Decode message from bytes to string and then to dictionary
         payload = msg.payload.decode ("utf-8")
         data = json.loads(payload)
 
-#Αποθήκευση δεδομένων στη μνήμη 
+# Update in-memory data 
         latest_data = data 
         print (f"New pinpoint {latest_data['speed']} km/h")
 
@@ -39,7 +39,7 @@ def on_message(client, userdata, msg):
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 client.on_message = on_message
 
-# Εκκίνηση τερματισμός του MQTT μαζί με το FASTAPI
+# Lifespan event handler to manage MQTT connection startup/shutdown
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
@@ -58,7 +58,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Επιτρέπουμε την επικοινωνία μεταξύ Front και Back end
+# Enable CORS to allow communication between Frontend and Backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  
@@ -67,7 +67,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Οι πόρτες του API ------------------------------------------------------------------------------------------
+# API endpoints  ------------------------------------------------------------------------------------------
 @app.get("/")
 def read_root():
     return {"status": "Online", "service": "School Bus Tracker Backend"}
